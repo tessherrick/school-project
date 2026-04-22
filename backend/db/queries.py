@@ -92,6 +92,24 @@ def get_recent_logs(user_id: str, days: int = 7) -> list[dict[str, Any]]:
     return result.data
 
 
+def get_recent_wearable_readings(
+    user_id: str, limit: int = 10
+) -> list[dict[str, Any]]:
+    result = (
+        anon_client()
+        .table("wearable_readings")
+        .select(
+            "date, hrv_rmssd, recovery_score, resting_hr, "
+            "sleep_performance, strain, source, created_at"
+        )
+        .eq("user_id", user_id)
+        .order("date", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return result.data
+
+
 def db_ping() -> bool:
     """Cheap round-trip to Supabase: SELECT one row from interventions."""
     try:

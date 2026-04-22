@@ -14,6 +14,7 @@ from backend.db.queries import (
     list_interventions_with_estimates,
     upsert_daily_log,
 )
+from backend.whoop.router import router as whoop_router
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
@@ -25,6 +26,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(whoop_router)
 
 
 class LogBody(BaseModel):
