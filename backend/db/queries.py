@@ -117,3 +117,54 @@ def db_ping() -> bool:
         return True
     except Exception:
         return False
+
+
+def list_experiments(user_id: str) -> list[dict[str, Any]]:
+    result = (
+        anon_client()
+        .table("experiments")
+        .select(
+            "id, intervention_id, protocol_type, start_date, end_date, "
+            "status, schedule, created_at, "
+            "interventions(key, label)"
+        )
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data
+
+
+def get_intervention(intervention_id: str) -> dict[str, Any] | None:
+    result = (
+        anon_client()
+        .table("interventions")
+        .select("id, key, label")
+        .eq("id", intervention_id)
+        .execute()
+    )
+    return result.data[0] if result.data else None
+
+
+def create_experiment(
+    user_id: str,
+    intervention_id: str,
+    protocol: dict[str, Any],
+) -> dict[str, Any]:
+    result = (
+        anon_client()
+        .table("experiments")
+        .insert(
+            {
+                "user_id": user_id,
+                "intervention_id": intervention_id,
+                "protocol_type": protocol["protocol_type"],
+                "start_date": protocol["start_date"],
+                "end_date": protocol["end_date"],
+                "status": "active",
+                "schedule": protocol["schedule"],
+            }
+        )
+        .execute()
+    )
+    return result.data[0] if result.data else {}
