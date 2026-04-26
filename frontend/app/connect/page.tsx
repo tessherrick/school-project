@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Layout from "../components/Layout";
+import { api } from "../lib/api";
 
 type SyncResult = {
   synced_recovery: number;
@@ -16,8 +18,6 @@ type Reading = {
   sleep_performance: number | null;
   source: string;
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Connect() {
   const [success, setSuccess] = useState(false);
@@ -35,9 +35,8 @@ export default function Connect() {
 
   async function loadReadings() {
     try {
-      const res = await fetch(`${API}/api/wearables/recent?limit=10`);
-      if (!res.ok) throw new Error(await res.text());
-      setReadings(await res.json());
+      const data = await api<Reading[]>("/api/wearables/recent?limit=10");
+      setReadings(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -47,9 +46,9 @@ export default function Connect() {
     setError(null);
     setConnecting(true);
     try {
-      const res = await fetch(`${API}/api/auth/whoop/login`);
-      if (!res.ok) throw new Error(await res.text());
-      const { authorize_url } = await res.json();
+      const { authorize_url } = await api<{ authorize_url: string }>(
+        "/api/auth/whoop/login"
+      );
       window.location.href = authorize_url;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -61,9 +60,10 @@ export default function Connect() {
     setError(null);
     setSyncing(true);
     try {
-      const res = await fetch(`${API}/api/whoop/sync`, { method: "POST" });
-      if (!res.ok) throw new Error(await res.text());
-      setSyncResult(await res.json());
+      const result = await api<SyncResult>("/api/whoop/sync", {
+        method: "POST",
+      });
+      setSyncResult(result);
       await loadReadings();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -73,24 +73,22 @@ export default function Connect() {
   }
 
   return (
-    <main className="min-h-screen p-16 font-mono max-w-3xl">
-      <h1 className="text-2xl font-bold mb-8">Connect your Whoop</h1>
+    <Layout>
+      <h1 className="font-serif text-5xl leading-tight">Connect Whoop</h1>
+      <p className="mt-3 text-muted">
+        Authorize Motif to read your recovery, sleep, and HRV data.
+      </p>
 
       {error && (
-        <p className="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-6 text-sm whitespace-pre-wrap">
-          {error}
-        </p>
+        <p className="mt-6 text-sm text-muted">Something went wrong: {error}</p>
       )}
 
       {!success && (
-        <section className="mb-10">
-          <p className="text-gray-600 mb-4 text-sm">
-            Authorize Motif to read your Whoop recovery, sleep, and profile data.
-          </p>
+        <section className="mt-10">
           <button
             onClick={handleConnect}
             disabled={connecting}
-            className="bg-black text-white px-5 py-2 rounded disabled:opacity-50"
+            className="rounded-sm bg-ochre px-5 py-3 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {connecting ? "Redirecting…" : "Connect Whoop"}
           </button>
@@ -98,62 +96,66 @@ export default function Connect() {
       )}
 
       {success && (
-        <section className="mb-10">
-          <p className="bg-green-50 border border-green-200 text-green-800 rounded p-3 mb-4 text-sm">
-            Whoop connected. Pull in the last 30 days of data next.
+        <section className="mt-10">
+          <p className="text-sm text-ink">
+            Whoop connected. Pull in your last 30 days of data.
           </p>
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="bg-black text-white px-5 py-2 rounded disabled:opacity-50"
+            className="mt-4 rounded-sm bg-ochre px-5 py-3 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {syncing ? "Syncing…" : "Sync my last 30 days"}
+            {syncing ? "Syncing…" : "Sync last 30 days"}
           </button>
           {syncResult && (
-            <pre className="bg-gray-100 rounded p-4 text-xs mt-4">
-              {JSON.stringify(syncResult, null, 2)}
-            </pre>
+            <p className="mt-4 text-sm text-muted">
+              Synced {syncResult.synced_recovery} recovery and{" "}
+              {syncResult.synced_sleep} sleep records across{" "}
+              {syncResult.dates.length} day{syncResult.dates.length === 1 ? "" : "s"}.
+            </p>
           )}
         </section>
       )}
 
-      <section>
-        <h2 className="text-sm uppercase tracking-widest text-gray-500 mb-3">
-          Recent wearable readings
-        </h2>
-        {readings === null && <p className="text-gray-400 text-sm">Loading…</p>}
+      <section className="mt-14">
+        <h2 className="font-serif text-2xl">Recent readings</h2>
+        {readings === null && (
+          <p className="mt-4 text-muted">Loading…</p>
+        )}
         {readings && readings.length === 0 && (
-          <p className="text-gray-400 text-sm">No readings yet.</p>
+          <p className="mt-4 text-sm text-muted">No readings yet.</p>
         )}
         {readings && readings.length > 0 && (
-          <table className="w-full text-sm border-collapse">
+          <table className="mt-4 w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="py-2 pr-4">Date</th>
-                <th className="py-2 pr-4">HRV</th>
-                <th className="py-2 pr-4">Recovery</th>
-                <th className="py-2 pr-4">RHR</th>
-                <th className="py-2 pr-4">Sleep %</th>
-                <th className="py-2 pr-4">Source</th>
+              <tr className="border-b border-rule text-left text-xs uppercase tracking-widest text-muted">
+                <th className="py-3 pr-4 font-normal">Date</th>
+                <th className="py-3 pr-4 font-normal">HRV</th>
+                <th className="py-3 pr-4 font-normal">Recovery</th>
+                <th className="py-3 pr-4 font-normal">RHR</th>
+                <th className="py-3 pr-4 font-normal">Sleep</th>
               </tr>
             </thead>
             <tbody>
               {readings.map((r) => (
-                <tr key={r.date} className="border-b last:border-b-0">
-                  <td className="py-2 pr-4">{r.date}</td>
-                  <td className="py-2 pr-4">
+                <tr key={r.date} className="border-b border-rule last:border-b-0">
+                  <td className="py-3 pr-4 text-ink">{r.date}</td>
+                  <td className="py-3 pr-4 text-ink">
                     {r.hrv_rmssd != null ? r.hrv_rmssd.toFixed(1) : "—"}
                   </td>
-                  <td className="py-2 pr-4">{r.recovery_score ?? "—"}</td>
-                  <td className="py-2 pr-4">{r.resting_hr ?? "—"}</td>
-                  <td className="py-2 pr-4">{r.sleep_performance ?? "—"}</td>
-                  <td className="py-2 pr-4 text-gray-500">{r.source}</td>
+                  <td className="py-3 pr-4 text-ink">
+                    {r.recovery_score ?? "—"}
+                  </td>
+                  <td className="py-3 pr-4 text-ink">{r.resting_hr ?? "—"}</td>
+                  <td className="py-3 pr-4 text-ink">
+                    {r.sleep_performance ?? "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </section>
-    </main>
+    </Layout>
   );
 }
