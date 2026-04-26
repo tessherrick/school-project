@@ -19,6 +19,7 @@ from backend.db.queries import (
     upsert_daily_log,
 )
 from backend.ml.analysis import analyze_experiment
+from backend.ml.backfill import run_observational_backfill
 from backend.ml.bandit import (
     select_next_experiment,
     select_next_experiment_diagnostic,
@@ -124,5 +125,35 @@ def experiments_list():
 
 @app.get("/api/posteriors")
 def posteriors():
-    estimator = PersonalEstimator(TEST_USER_ID, anon_client())
-    return estimator.get_all_posteriors()
+    """Each row gets a `num_experiments` count layered on top of the
+    estimator's view, so the UI can distinguish observational evidence
+    (num_observations > num_experiments) from completed experiments.
+    """
+    client = anon_client()
+    estimator = PersonalEstimator(TEST_USER_ID, client)
+    rows = estimator.get_all_posteriors()
+
+    completed = (
+        client.table("experiments")
+        .select("intervention_id, status")
+        .eq("user_id", TEST_USER_ID)
+        .eq("status", "completed")
+        .execute()
+        .data
+    )
+    counts: dict[str, int] = {}
+    for r in completed:
+        iv_id = r["intervention_id"]
+        counts[iv_id] = counts.get(iv_id, 0) + 1
+
+    for row in rows:
+        row["num_experiments"] = counts.get(row["intervention_id"], 0)
+    return rows
+
+
+@app.post("/api/backfill/run")
+def backfill_run():
+    try:
+        return run_observational_backfill(TEST_USER_ID, anon_client())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

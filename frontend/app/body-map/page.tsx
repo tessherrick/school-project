@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
@@ -12,6 +13,7 @@ type Posterior = {
   posterior_mean: number;
   posterior_sd: number;
   num_observations: number;
+  num_experiments: number;
   prior_mean_effect: number | null;
   prior_sd_effect: number | null;
 };
@@ -103,6 +105,12 @@ export default function BodyMapPage() {
             What affects your recovery
           </h1>
           <p className="mt-3 text-muted">{subhead}</p>
+          <Link
+            href="/history"
+            className="mt-2 inline-block text-sm text-ochre hover:underline"
+          >
+            Fill in your history →
+          </Link>
         </div>
         <button
           onClick={runExperiment}
@@ -136,6 +144,17 @@ export default function BodyMapPage() {
   );
 }
 
+function evidenceLabel(p: Posterior): string {
+  const exp = p.num_experiments ?? 0;
+  const hasObservational = p.num_observations > exp;
+  if (exp === 0 && !hasObservational) return "no experiments yet";
+  if (exp === 0 && hasObservational) return "From your history";
+  if (exp > 0 && hasObservational) {
+    return `${exp} experiment${exp === 1 ? "" : "s"} + history`;
+  }
+  return `${exp} experiment${exp === 1 ? "" : "s"} completed`;
+}
+
 function PosteriorCard({
   p,
   description,
@@ -161,13 +180,7 @@ function PosteriorCard({
         {display}
       </div>
       <ConfidenceBar mean={mean} sd={p.posterior_sd} />
-      <div className="mt-3 text-xs text-muted">
-        {p.num_observations === 0
-          ? "no experiments yet"
-          : `${p.num_observations} experiment${
-              p.num_observations === 1 ? "" : "s"
-            } completed`}
-      </div>
+      <div className="mt-3 text-xs text-muted">{evidenceLabel(p)}</div>
       {description && (
         <div className="mt-4 text-[13px] text-muted">{description}</div>
       )}

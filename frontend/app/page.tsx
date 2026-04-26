@@ -74,9 +74,20 @@ export default function Home() {
               "Not logged yet"
             )}
           </CardBody>
-          <CardAction href="/log">
-            {loggedToday ? "Update log" : "Log today"}
-          </CardAction>
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <Link
+              href="/log"
+              className="font-medium text-ochre hover:underline"
+            >
+              {loggedToday ? "Update log" : "Log today"} →
+            </Link>
+            <Link
+              href="/history"
+              className="text-muted hover:text-ink hover:underline"
+            >
+              Fill in your history →
+            </Link>
+          </div>
         </Card>
 
         <Card>
@@ -118,9 +129,9 @@ export default function Home() {
               ? "…"
               : completedCount === 0
               ? "What you've learned — nothing yet"
-              : `What you've learned — ${completedCount} experiment${
+              : `What you've learned — ${completedCount} finding${
                   completedCount === 1 ? "" : "s"
-                } completed`}
+                } so far`}
           </CardBody>
           {strongest && completedCount > 0 && (
             <div className="mt-3 text-sm">

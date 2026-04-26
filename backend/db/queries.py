@@ -110,6 +110,25 @@ def get_recent_wearable_readings(
     return result.data
 
 
+def get_all_wearable_readings(user_id: str) -> list[dict[str, Any]]:
+    """Every reading we have for the user, oldest first.
+
+    Used by the /history page so the user can retrospectively log past days
+    against the nights for which we already have HRV.
+    """
+    result = (
+        anon_client()
+        .table("wearable_readings")
+        .select(
+            "date, hrv_rmssd, recovery_score, resting_hr, sleep_performance"
+        )
+        .eq("user_id", user_id)
+        .order("date", desc=False)
+        .execute()
+    )
+    return result.data
+
+
 def db_ping() -> bool:
     """Cheap round-trip to Supabase: SELECT one row from interventions."""
     try:

@@ -2,7 +2,11 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
-from backend.db.queries import TEST_USER_ID, get_recent_wearable_readings
+from backend.db.queries import (
+    TEST_USER_ID,
+    get_all_wearable_readings,
+    get_recent_wearable_readings,
+)
 from backend.whoop.oauth import (
     build_authorize_url,
     consume_state,
@@ -68,3 +72,8 @@ def whoop_sync():
 @router.get("/api/wearables/recent")
 def wearables_recent(limit: int = 10):
     return get_recent_wearable_readings(TEST_USER_ID, limit=limit)
+
+
+@router.get("/api/wearables/all")
+def wearables_all():
+    return get_all_wearable_readings(TEST_USER_ID)
