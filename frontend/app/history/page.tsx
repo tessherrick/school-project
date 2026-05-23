@@ -119,6 +119,12 @@ export default function HistoryPage() {
     return n;
   }, [states]);
 
+  const orderedReadings = useMemo(() => {
+    if (!readings) return null;
+    // Newest first — ISO YYYY-MM-DD sorts lexicographically = chronologically.
+    return [...readings].sort((a, b) => b.date.localeCompare(a.date));
+  }, [readings]);
+
   function cyclePill(date: string, key: string) {
     setStates((prev) => ({
       ...prev,
@@ -225,15 +231,15 @@ export default function HistoryPage() {
         <p className="mt-6 text-sm text-muted">Something went wrong: {error}</p>
       )}
 
-      {!readings || !interventions ? (
+      {!orderedReadings || !interventions ? (
         <p className="mt-10 text-muted">Loading…</p>
-      ) : readings.length === 0 ? (
+      ) : orderedReadings.length === 0 ? (
         <p className="mt-10 text-sm text-muted">
           No wearable readings yet — connect Whoop and sync first.
         </p>
       ) : (
         <ul className="mt-8 divide-y divide-rule border-y border-rule">
-          {readings.map((r) => (
+          {orderedReadings.map((r) => (
             <li key={r.date} className="py-5">
               <div className="flex items-baseline justify-between gap-4">
                 <div className="font-medium text-ink">{longDate(r.date)}</div>
