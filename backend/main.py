@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import date
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from backend.ml.bandit import (
     select_next_experiment_diagnostic,
 )
 from backend.ml.estimator import PersonalEstimator
+from backend.ml.hypothesis_generator import generate_hypotheses
 from backend.ml.protocol import generate_abab_protocol
 from backend.whoop.router import router as whoop_router
 
@@ -157,3 +159,25 @@ def backfill_run():
         return run_observational_backfill(TEST_USER_ID, anon_client())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Anthropic calls cost real money; cache identical user requests for 5 minutes
+# so refreshing the /hypotheses page doesn't fire the model again.
+_HYPOTHESES_CACHE: dict[str, tuple[float, dict]] = {}
+_HYPOTHESES_TTL_SECONDS = 300
+
+
+@app.post("/api/hypotheses/generate")
+def hypotheses_generate():
+    cached = _HYPOTHESES_CACHE.get(TEST_USER_ID)
+    now = time.time()
+    if cached and now - cached[0] < _HYPOTHESES_TTL_SECONDS:
+        payload = dict(cached[1])
+        payload["cached"] = True
+        return payload
+    try:
+        result = generate_hypotheses(TEST_USER_ID, anon_client())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    _HYPOTHESES_CACHE[TEST_USER_ID] = (now, result)
+    return {**result, "cached": False}

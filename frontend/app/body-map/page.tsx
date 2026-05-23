@@ -112,13 +112,21 @@ export default function BodyMapPage() {
             Fill in your history →
           </Link>
         </div>
-        <button
-          onClick={runExperiment}
-          disabled={starting}
-          className="self-start rounded-sm border border-ochre px-4 py-2 text-sm font-medium text-ochre transition-colors hover:bg-ochre hover:text-white disabled:opacity-60"
-        >
-          {starting ? "Starting…" : "Run an experiment"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3 self-start">
+          <Link
+            href="/hypotheses"
+            className="rounded-sm bg-ochre px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          >
+            What to test next →
+          </Link>
+          <button
+            onClick={runExperiment}
+            disabled={starting}
+            className="rounded-sm border border-ochre px-4 py-2 text-sm font-medium text-ochre transition-colors hover:bg-ochre hover:text-white disabled:opacity-60"
+          >
+            {starting ? "Starting…" : "Run an experiment"}
+          </button>
+        </div>
       </div>
 
       {error && (

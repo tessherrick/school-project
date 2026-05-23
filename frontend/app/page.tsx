@@ -148,9 +148,20 @@ export default function Home() {
               </span>
             </div>
           )}
-          <CardAction href="/body-map">
-            {completedCount === 0 ? "Run your first experiment" : "Open body map"}
-          </CardAction>
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <Link
+              href="/body-map"
+              className="font-medium text-ochre hover:underline"
+            >
+              {completedCount === 0 ? "Run your first experiment" : "Open body map"} →
+            </Link>
+            <Link
+              href="/hypotheses"
+              className="text-muted hover:text-ink hover:underline"
+            >
+              See what to test →
+            </Link>
+          </div>
         </Card>
       </div>
     </Layout>
