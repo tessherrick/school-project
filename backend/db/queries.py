@@ -8,6 +8,8 @@ from typing import Any
 
 from backend.db.client import anon_client, service_client
 
+# NOTE: Single-user demo mode. Real authentication is deferred to a later milestone
+# (post-CS153). This constant corresponds to a single seeded row in the `users` table.
 TEST_USER_ID = "00000000-0000-0000-0000-000000000001"
 TEST_USER_EMAIL = "tess@test.local"
 

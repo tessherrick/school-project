@@ -1,4 +1,6 @@
 """FastAPI router for Whoop OAuth + sync endpoints."""
+import os
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
@@ -45,7 +47,8 @@ def whoop_callback(
         save_tokens(TEST_USER_ID, token_response)
     except Exception as e:
         raise HTTPException(500, f"Token exchange failed: {e}")
-    return RedirectResponse(url="http://localhost:3000/connect?success=true")
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    return RedirectResponse(url=f"{frontend_url}/connect?success=true")
 
 
 @router.post("/api/whoop/refresh")

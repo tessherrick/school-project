@@ -1,5 +1,14 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+if (!BASE) {
+  // Inlined at build time by Next.js. An empty value means the build was run
+  // without NEXT_PUBLIC_API_URL set, so every request falls back to same-origin
+  // and will fail against a separately-hosted backend.
+  console.error(
+    "NEXT_PUBLIC_API_URL is not set — API calls will fail in production. Set it at build time."
+  );
+}
+
 type FetchOpts = {
   method?: "GET" | "POST";
   body?: unknown;

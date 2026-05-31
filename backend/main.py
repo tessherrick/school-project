@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from datetime import date
 from pathlib import Path
@@ -32,11 +33,54 @@ from backend.whoop.router import router as whoop_router
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
+# Required at runtime — the app cannot function without these. Optional vars
+# (ALLOWED_ORIGINS, FRONTEND_URL, PORT) fall back to local-dev defaults.
+REQUIRED_ENV_VARS = (
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ANTHROPIC_API_KEY",
+    "WHOOP_CLIENT_ID",
+    "WHOOP_CLIENT_SECRET",
+    "WHOOP_REDIRECT_URI",
+)
+
+
+def validate_env() -> None:
+    """Fail fast at startup if any required env var is missing.
+
+    Uses .get() rather than [] so the error message can name every missing
+    var at once instead of crashing on the first one consumed downstream.
+    """
+    missing = [name for name in REQUIRED_ENV_VARS if not os.environ.get(name)]
+    if missing:
+        print(
+            "FATAL: missing required environment variable(s): "
+            + ", ".join(missing)
+            + "\nSet them in .env (local) or the deployment platform's config.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    print(
+        f"env validated: {len(REQUIRED_ENV_VARS)}/{len(REQUIRED_ENV_VARS)} "
+        "required vars present, optional defaults applied where unset"
+    )
+
+
+validate_env()
+
 app = FastAPI(title="Motif N1 API")
+
+# Comma-separated list of allowed frontend origins; defaults to local dev.
+allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
